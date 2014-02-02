@@ -22,6 +22,8 @@ def createUI():
 	mc.columnLayout( adjustableColumn=True )
 	mc.textFieldButtonGrp( 'repoPath', label='Repo Path', text='', buttonLabel='Browse', bc=lambda *args: getFolder() )
 	mc.button( label='Refresh', c=lambda *args: initRepo() )
+	mc.tabLayout(innerMarginWidth=5, innerMarginHeight=5)
+	mc.columnLayout( 'Files', adjustableColumn=True )
 	mc.rowColumnLayout(nc=5)
 	mc.separator(h=20, style='none')
 	mc.text(l='Working Copy Changes')
@@ -44,11 +46,16 @@ def createUI():
 	mc.setParent( '..' )
 	mc.textFieldButtonGrp( 'commitMessage', label='Message', text='', buttonLabel='Commit', bc=lambda *args: doCommit() )
 	mc.separator(h=20)
+	mc.setParent( '..' )
+
+	mc.columnLayout( 'History', adjustableColumn=True )
 	mc.intFieldGrp( 'commitCount', numberOfFields=1, label='Number of Commits', value1=10, cc=lambda *args: getCommits())
-	mc.scrollLayout(h=200, horizontalScrollBarThickness=16, verticalScrollBarThickness=16)
+	mc.scrollLayout(h=250, horizontalScrollBarThickness=16, verticalScrollBarThickness=16)
 	mc.rowColumnLayout( 'commitsGrid', numberOfColumns=2, cw=([1,450],[2,150]) )
 	mc.setParent( '..' )
 	mc.setParent( '..' )
+	mc.text(l='Commited Changes')
+	mc.textScrollList( 'commitChanges', numberOfRows=16, allowMultiSelection=True)
 	mc.showWindow( 'gitMayaWin' )
 
 	postUI()
@@ -89,13 +96,34 @@ def getWorkingCopy():
 	if fileList:
 		mc.textScrollList( 'workingChanges', edit=True, append=fileList)	
 
+def commitNumLink(num):
+	return lambda *args: getCommitFiles(num)
+
 def getCommits():
 	global gitMaya
 	clearChildren()
 	count = mc.intFieldGrp( 'commitCount', query=True, v1=True)
-	for commit in gitMaya.getCommits('master', count):
-		mc.textField(parent='commitsGrid', text=commit.message)
-		mc.textField(parent='commitsGrid', text=commit.author)
+	# num=int(1)
+	commits = gitMaya.getCommits('master', count)
+
+	for i in range(0, len(commits)):
+		mc.textField(parent='commitsGrid', ed=0, text=commits[i].message, rfc=commitNumLink(i+1) )
+		mc.textField(parent='commitsGrid', ed=0, text=commits[i].author)
+
+	# for commit in gitMaya.getCommits('master', count):
+	# 	mc.textField(parent='commitsGrid', ed=0, text=commit.message, rfc=(lambda *args: getCommitFiles(int(num))) )
+		
+	# 	mc.textField(parent='commitsGrid', ed=0, text=commit.author)
+	# 	num= num+1
+		# count = count+1
+
+def getCommitFiles(num):
+	global gitMaya
+	mc.textScrollList( 'commitChanges', edit=True, ra=True)
+	print num
+	files = gitMaya.getCommitChanged(num)
+	if files:
+		mc.textScrollList( 'commitChanges', edit=True, append=files)
 
 def addChanged():
 	global gitMaya

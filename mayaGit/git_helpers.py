@@ -44,7 +44,23 @@ class mayaGit:
 		return self.index.add([diff.a_blob.path for diff in self.index.diff(None)])
 
 	def getCommits(self, branch, limit):
-		return self.repo.iter_commits(branch, max_count=limit)
+		self.commits = list(self.repo.iter_commits(branch, max_count=limit))
+		return self.commits
+
+	def getCommitChanged(self, num):
+		changed_files = list()
+
+		if self.commits:
+			for x in self.commits[num].diff(self.commits[num-1]):
+			    if x.a_blob:
+				    if x.a_blob.path not in changed_files:
+				        changed_files.append(x.a_blob.path)
+
+	        	if x.b_blob:
+					if x.b_blob is not None and x.b_blob.path not in changed_files:
+						changed_files.append(x.b_blob.path)
+
+		return changed_files      
 
 	def getStaged(self):
 		hcommit = self.repo.head.commit
